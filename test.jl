@@ -1,5 +1,5 @@
 print("Hello")
-cd("/Users/charleshadfield/Desktop/julia/vqc")
+cd("/Users/charles/Desktop/julia/vqc")
 using Pkg
 Pkg.activate(".")
 
