@@ -1,12 +1,3 @@
-print("Hello")
-cd("/Users/charles/Desktop/julia/vqc")
-using Pkg
-Pkg.activate(".")
-
-include("base.jl")
-
-using Test
-
 @testset "oneQbitflip" begin
     vqc = VQC(2)
 
