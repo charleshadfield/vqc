@@ -1,3 +1,5 @@
+using VirtualQuantumComputer: twoQgate
+
 @testset "oneQbitflip" begin
     vqc = VQC(2)
 

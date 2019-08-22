@@ -1,3 +1,5 @@
+export VQC, buildwf, oneQgate!, twoQgate!, measure!
+
 struct VQC
     n::Int
 end

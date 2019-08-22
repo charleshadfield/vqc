@@ -1,2 +1,7 @@
+name = "VirtualQuantumComputer"
+uuid = "5d2d440e-c50e-11e9-27ea-7b4cc7be9032"
+authors = ["Charles Hadfield <charles.hadfield@gmail.com>"]
+version = "0.1.0"
+
 [deps]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

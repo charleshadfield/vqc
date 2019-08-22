@@ -1,3 +1,5 @@
+using VirtualQuantumComputer: probabilities, collapse!
+
 @testset "probabilities" begin
 
     for n in 1:3
