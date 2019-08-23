@@ -7,3 +7,5 @@ end
 include("test-gates.jl")
 
 include("test-measurement.jl")
+
+include("test-clifford.jl")
