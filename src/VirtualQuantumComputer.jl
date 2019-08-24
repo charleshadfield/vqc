@@ -3,8 +3,9 @@ module VirtualQuantumComputer
 include("vqc.jl")
 
 include("wavefunction.jl")
-include("gates.jl")
+include("wf-gates.jl")
 
 include("clifford.jl")
+include("clif-gates.jl")
 
 end # module
