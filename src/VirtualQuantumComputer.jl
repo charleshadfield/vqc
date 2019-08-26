@@ -7,5 +7,6 @@ include("wf-gates.jl")
 
 include("clifford.jl")
 include("clif-gates.jl")
+include("clif-measurement.jl")
 
 end # module

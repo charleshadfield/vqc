@@ -36,46 +36,6 @@ function buildsymplecticrepn(vqc::VQC)
 end
 
 """
-    rref!(symp)
-
-Row reduce symplectic matrix.
-
-Algorithm assumes entries are binary valued.
-"""
-function rref!(symp)
-    # get dimensions of matrix, final column is pm1 value
-    nr, nc = size(symp) .+ (0, -1)
-    i = j = 1
-    while i <= nr && j <= nc
-        entry, pos = findmax(symp[i:nr, j])
-        if entry == 0
-            # no leading 1 will be found in column j
-            # there may be 1s appearing above row i in column j
-            j += 1
-            continue
-        end
-        # a leading 1 has been found at position (i+pos-1, j)
-        if pos != 1
-            symp[i, :], symp[i+pos-1, :] = symp[i+pos-1, :], symp[i, :]
-        end
-        # (i, j) is now a leading entry
-        # remove all appearances of 1 in column j except in (i, j)
-        # do this by adding mod 2 row i to row iprime
-        for iprime in 1:nr
-            if iprime != i && symp[iprime, j] == 1
-                for jprime in j:nc+1
-                    symp[iprime, jprime] =  (symp[iprime, jprime] + symp[i, jprime]) % 2
-                end
-            end
-        end
-        i += 1
-        j += 1
-    end
-    symp
-end
-
-
-"""
     oneQclifford!(reducedsymp, gate::Symbol)
 
 Apply clifford `gate` to `reducedsymp` where
