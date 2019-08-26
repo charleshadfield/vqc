@@ -1,4 +1,4 @@
-export buildsymplecticrepn, oneQclifford!
+export buildsymplecticrepn, oneQclifford!, twoQclifford!
 
 include("clif-gates.jl")
 
@@ -120,6 +120,52 @@ function oneQclifford!(symp, gate::Symbol, q::Int)
     for row = 1:n
         reducedsymp = transpose(symp[row, [q, n+q, 2n+1]])
         symp[row, [q, n+q, 2n+1]] = oneQclifford!(reducedsymp, gate)
+    end
+    symp
+end
+
+"""
+    twoQgate!(reducedsymp, gate::Symbol)
+
+Apply `CNOT` or `CZ` to `reducedsymp` where
+`reducedsymp = [z1; z2; x1; x2;]`. Here `zi`, `xi` are binary, and `reducedsymp` should
+be considered a **column** vector. So multiplication is from the right.
+
+Note that both `CZ` and `CNOT` do not required knowledge of signed bit.
+Moreover, they are linear in the sense that we only need to define their
+actions on the `z`-part and `x`-part independently.
+"""
+function twoQclifford!(reducedsymp, gate::Symbol)
+    @assert length(reducedsymp) == 4
+    @assert gate in [:CNOT, :CZ]
+    if gate == :CNOT
+        reducedsymp[1:2] = clifCNOTpartZ * reducedsymp[1:2]
+        reducedsymp[3:4] = clifCNOTpartX * reducedsymp[3:4]
+    else
+        reducedsymp[3:4] = clifCZpartX * reducedsymp[3:4]
+    end
+    # reduce modulo 2
+    reducedsymp[:] = reducedsymp .% 2
+    reducedsymp
+end
+
+"""
+    oneQclifford!(symp, gate::Symbol, q::Int)
+
+Apply clifford `gate` to `symp` by repeatedly calling
+`twoQclifford!(reducedsymp, gate)`
+`reducedsymp = [z1; z2; x1; x2]` for binary values `zi`, `xi`.
+"""
+function twoQclifford!(symp, gate::Symbol, q1::Int, q2::Int)
+    n = size(symp)[1]
+    @assert q1 ≤ n
+    @assert q2 ≤ n
+    @assert gate in [:CNOT, :CZ]
+
+    # the following code works for CNOT even if q1 > q2
+    for row = 1:n
+        reducedsymp = symp[row, [q1, q2, n+q1, n+q2]]
+        symp[row, [q1, q2, n+q1, n+q2]] = twoQclifford!(reducedsymp, gate)
     end
     symp
 end

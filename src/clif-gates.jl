@@ -11,3 +11,17 @@ clifHpart = [0 1 0; 1 0 0; 0 0 1]
 
 clifSpart = [1 0 0; 1 1 0; 0 0 1]
 # clifS also needs to update s as s + z*x
+
+
+#clifCNOT sends
+# ZI → ZI
+# IZ → ZZ
+# XI → XX
+# IX → IX
+clifCNOTpartZ = [1 1; 0 1]
+clifCNOTpartX = [1 0; 1 1]
+
+#clifCZ sends
+# XI → XX
+# IX → XX
+clifCZpartX = [1 1; 1 1]

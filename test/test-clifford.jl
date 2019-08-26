@@ -52,5 +52,38 @@ end
     @test sym == outcome
 end
 
+@testset "reduced twoQclifford!" begin
+    sym = [0; 1; 0; 0] # IZ
+    ZZ = [1; 1; 0; 0]
+    twoQclifford!(sym, :CNOT)
+    @test sym == ZZ
 
-#bell = [[1 1 0 0 0]; [0 0 1 1 0]]
+    #sym = [1; 0; 0; 1] #ZX
+    #YY = [1; 1; 1; 1]
+    #@test twoQclifford!(sym, :CNOTreversed) == YY
+
+    sym = [0; 0; 1; 1]
+    II = [0; 0; 0; 0]
+    @test twoQclifford!(sym, :CZ) == II
+end
+
+@testset "twoQclifford!" begin
+    sym1 = buildsymplecticrepn(VQC(2))
+    twoQclifford!(sym1, :CNOT, 1, 2)
+    sym2 = buildsymplecticrepn(VQC(2))
+    sym2[2, 1] = 1
+    @test sym1 == sym2
+
+    sym1 = buildsymplecticrepn(VQC(2))
+    twoQclifford!(sym1, :CNOT, 2, 1)
+    sym2 = buildsymplecticrepn(VQC(2))
+    sym2[1, 2] = 1
+    @test sym1 == sym2
+
+    bell = [1 1 0 0 0; 0 0 1 1 0]
+    sym = buildsymplecticrepn(VQC(2))
+    oneQclifford!(sym, :H, 1)
+    twoQclifford!(sym, :CNOT, 1, 2)
+    VirtualQuantumComputer.rref!(sym)
+    @test sym == bell
+end
