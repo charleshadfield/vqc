@@ -1,11 +1,17 @@
 using VirtualQuantumComputer, Test
 
-@testset "trivial" begin
-    @test true
-end
+@testset "All tests" begin
 
-include("test-gates.jl")
+    @testset "trivial" begin
+        @test true
+    end
 
-include("test-measurement.jl")
+    include("test-gates.jl")
 
-include("test-clifford.jl")
+    include("test-measurement.jl")
+
+    include("test-clifford.jl")
+
+    include("test-clifford-measurement.jl")
+
+end # All tests.

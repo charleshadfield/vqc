@@ -1,7 +1,20 @@
+export measureclifford
 
+"""
+    phasedstabilizermultiplication!(stab1, stab2)
 
+Multiply `stab1` by `stab2` modifying stab1, and update phase.
 
-
+- `stab1` and `stab2` must commute to ensure that the final phase is ``\\pm 1``.
+- `stab1` is replaced with `stab1 * stab2` and **not** `stab2 * stab1`.
+- rules are as follows:
+    - `phase` initialized to `0 (mod 4)`;
+    - ``Z_k \\circ X_k`` gives ``Y_k`` and `phase += 1`;
+    - other Paulis are inferred from this rule;
+    - final phase is addition of `phase` with `stab1` `stab2` phases.
+"""
+function phasedstabilizermultiplication!(stab1, stab2)
+end
 
 """
     rref!(symp)
@@ -32,6 +45,20 @@ function rref!(symp)
         for iprime in 1:nr
             if iprime != i && symp[iprime, j] == 1
                 for jprime in j:nc+1
+                    # this line is incorrect.
+                    # the phase must also be taken into account.
+                    # for example think of the two bell states
+                    #
+                    # bell1 = [1 1 0 0 0
+                    #          0 0 1 1 0]
+                    #
+                    # bell2 = [1 1 1 1 0
+                    #          0 0 1 1 0]
+                    #
+                    # these are not the same. However currently
+                    #
+                    # rref!(bell2) = bell1
+                    #
                     symp[iprime, jprime] =  (symp[iprime, jprime] + symp[i, jprime]) % 2
                 end
             end
@@ -42,19 +69,16 @@ function rref!(symp)
     symp
 end
 
-
-
-
 #function measureclifford!(symp, pauli::String, q::Int)
 #end
 
 function measureclifford!(symp, pauli::String, qubits::Vector{Int})
     n = size(symp)[1]
-    @assert length(string) == length(qubits)
-    weight = length(string)
+    @assert length(pauli) == length(qubits)
+    weight = length(pauli)
     for k = 1:weight
         @assert qubits[k] ≤ n
-        @assert string[k] in ["X", "Y", "Z"]
+        @assert pauli[k] in ['X', 'Y', 'Z']
     end
 
     # if qubits are out of order, then reorder
@@ -66,9 +90,9 @@ function measureclifford!(symp, pauli::String, qubits::Vector{Int})
     # build 2*weight length vector representing measurement in symplectic form
     measurementrepn = zeros(Int, 2*weight)
     for k = 1:weight
-        pauli[k] == "X" && (measurementrepn[n+k] = 1)
-        pauli[k] == "Y" && (measurementrepn[k] = measurementrepn[n+k]= 1)
-        pauli[k] == "Z" && (measurementrepn[k] = 1)
+        pauli[k] == 'X' && (measurementrepn[weight+k] = 1)
+        pauli[k] == 'Y' && (measurementrepn[k] = measurementrepn[weight+k]= 1)
+        pauli[k] == 'Z' && (measurementrepn[k] = 1)
     end
 
     # build 2*weight length vector to see which stabilizers anticommute
@@ -76,16 +100,16 @@ function measureclifford!(symp, pauli::String, qubits::Vector{Int})
     # this is the measurementrepn upon application of symplectic form
     dualmeasurementrepn = zeros(Int, 2*weight)
     for k = 1:weight
-        pauli[k] == "X" && (measurementrepn[k] = 1)
-        pauli[k] == "Y" && (measurementrepn[k] = measurementrepn[n+k]= 1)
-        pauli[k] == "Z" && (measurementrepn[n+k] = 1)
+        pauli[k] == 'X' && (dualmeasurementrepn[k] = 1)
+        pauli[k] == 'Y' && (dualmeasurementrepn[k] = dualmeasurementrepn[weight+k]= 1)
+        pauli[k] == 'Z' && (dualmeasurementrepn[weight+k] = 1)
     end
 
     # find noncommuting stabilizers
     noncommutingrows::Vector{Int} = []
     paulipositions = vcat(qubits, n .+ qubits)
     for row = 1:n
-        parity = (symp[row, paulipositions] .* dualmeasurementrepn) .% 2
+        parity = sum(symp[row, paulipositions] .* dualmeasurementrepn) % 2
         parity == 1 && append!(noncommutingrows, row)
     end
 
@@ -102,13 +126,13 @@ function measureclifford!(symp, pauli::String, qubits::Vector{Int})
         measurementoutcome = rand(0:1)
         # update noncommuting rows S2, ...
         for row in noncommutingrows[2:end]
-            symp[row, :] = (symp[row, :] .* symp[1, :]) .% 2
+            symp[row, :] = (symp[row, :] .+ symp[1, :]) .% 2
         end
         # update noncommuting row S1 with appropriately chosen measurement
         newstabilizer = zeros(Int, 2n+1)
         newstabilizer[paulipositions] = measurementrepn
         newstabilizer[end] = measurementoutcome
-        symp[noncommutingrows[1]] = newstab
+        symp[noncommutingrows[1],:] = newstabilizer
 
     # if no non-commuting rows exist then measurement is determinisitc.
     # can find the measurementoutcome by the following trick:
@@ -117,8 +141,13 @@ function measureclifford!(symp, pauli::String, qubits::Vector{Int})
     #   - initialize the parity of the final stabilizer to "0"
     #   - perform rref! on the augmented symplectic representation
     else
-        println("measurement is deterministic")
+        augmentedsymp = zeros(Int64, n+1, 2n+1)
+        augmentedsymp[1:end-1, :] = symp
+        augmentedsymp[end, paulipositions] = measurementrepn
+        rref!(augmentedsymp)
+        measurementoutcome = augmentedsymp[end,end]
+        # maybe set symplectic representation to rref! version of original symplectic repn.
+        symp[:,:] = augmentedsymp[1:end-1, :]
     end
-    println("not yet finished")
     measurementoutcome
 end
