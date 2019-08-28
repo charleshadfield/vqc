@@ -1,8 +1,35 @@
-using VirtualQuantumComputer: rref!
+using VirtualQuantumComputer: paulimultiplication!, phasedstabilizermultiplication!, rref!
+
+@testset "paulimultiplication! internal" begin
+    pauli = [0 1; 0 1] # XX
+    IX = [0 0; 0 1]
+    phase = 0
+    @test paulimultiplication!(pauli) == phase
+    @test pauli == IX
+
+    pauli = [1 1; 0 1] # YX
+    ZX = [1 0; 0 1]
+    phase = -1
+    @test paulimultiplication!(pauli) == phase
+    @test pauli == ZX
+end
+
+@testset "phasedstabilizermultiplication! internal" begin
+    stabs   = [1 1 0 0 0; 0 1 0 0 0]
+    updated = [1 0 0 0 0; 0 1 0 0 0]
+    phasedstabilizermultiplication!(stabs, 2)
+    @test stabs == updated
+
+    stabs = [1 1 1  0 1 1   0;
+             0 0 0  0 1 1   0]
+    updat = [1 1 1  0 0 0   1;
+             0 0 0  0 1 1   0]
+    @test phasedstabilizermultiplication!(stabs, 3) == updat
+end
 
 @testset "rref!" begin
-    sym = [1 1 0; 0 1 0]
-    symreduced = [1 0 0; 0 1 0]
+    sym = [1 1 0 0 0; 0 1 0 0 0]
+    symreduced = [1 0 0 0 0; 0 1 0 0 0]
     rref!(sym)
     @test sym == symreduced
 

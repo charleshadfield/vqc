@@ -1,19 +1,62 @@
-export measureclifford
+export measureclifford!
+
 
 """
-    phasedstabilizermultiplication!(stab1, stab2)
+    paulimultiplication!(paulis::Matrix{Int})
 
-Multiply `stab1` by `stab2` modifying stab1, and update phase.
+`paulis = [z1 x1; z2 x2]` represents two paulis ``P_1, P_2``.
+Function modifies paulisquare to be
+`[z3 x3; z2 x2]`
+where ``P_3 = P_1 \\circ P_2`` and returns `phase` ``\\in \\{-1,0,1\\}``.
 
-- `stab1` and `stab2` must commute to ensure that the final phase is ``\\pm 1``.
-- `stab1` is replaced with `stab1 * stab2` and **not** `stab2 * stab1`.
-- rules are as follows:
-    - `phase` initialized to `0 (mod 4)`;
-    - ``Z_k \\circ X_k`` gives ``Y_k`` and `phase += 1`;
-    - other Paulis are inferred from this rule;
-    - final phase is addition of `phase` with `stab1` `stab2` phases.
+e.g.
+- ``P_1 = X, P_2 = X``
+    - original `paulis = [0 1; 0 1]`
+    - modified `paulis = [0 1; 0 1]`
+    - return `phase = 0`
+- ``P_1 = X, P_2 = Y``
+    - original `paulis = [0 1; 1 1]`
+    - modified `paulis = [1 0; 1 1]`
+    - return `phase = 1` since ``X\\circ Y = i Z = (i)^1 Z``
 """
-function phasedstabilizermultiplication!(stab1, stab2)
+function paulimultiplication!(paulis::Matrix{Int})
+    phase = 0
+    det = (paulis[1,1]*paulis[2,2] + paulis[1,2]*paulis[2,1]) % 2
+    if det != 0
+        paulis == [0 1; 1 1] && (phase = 1)
+        paulis == [0 1; 1 0] && (phase = -1)
+        paulis == [1 1; 0 1] && (phase = -1)
+        paulis == [1 1; 1 0] && (phase = 1)
+        paulis == [1 0; 0 1] && (phase = 1)
+        paulis == [1 0; 1 1] && (phase = -1)
+    end
+    paulis[1,:] = (paulis[1,:] .+ paulis[2,:]) .% 2
+    phase
+end
+
+
+
+"""
+    phasedstabilizermultiplication!(stabs, n::Int)
+
+- `stabs = [stab1; stab2]` represents two stabilizers.
+- `n` is number of qubits
+
+`stab1` updated to be `stab1 * stab2` with appropriate phase.
+Function repeatedly calls function `paulimultiplication!`
+"""
+function phasedstabilizermultiplication!(stabs::Matrix{Int}, n::Int)
+    @assert size(stabs) == (2, 2n+1)
+    phasemod4 = 0
+    for k = 1:n
+        paulis = stabs[:,[k, n+k]]
+        phasemod4 += paulimultiplication!(paulis)
+        stabs[:,[k, n+k]] = paulis
+    end
+    @assert phasemod4 % 4 in [-2, 0, 2]
+    sign = Int(abs(phasemod4 % 4) // 2)
+    stabs[1,2n+1] = (stabs[1,2n+1] + stabs[2,2n+1] + sign) % 2
+    stabs
 end
 
 """
@@ -26,6 +69,10 @@ Algorithm assumes entries are binary valued.
 function rref!(symp)
     # get dimensions of matrix, final column is pm1 value
     nr, nc = size(symp) .+ (0, -1)
+    @assert 2nr == nc || 2(nr-1) == nc
+    # If 2nr = nc then rref! is being used on stabilizer generators as usual.
+    # Otherwise an extra row has been added in order to calculate measurement.
+    2nr == nc ? (nqubits = nr) : (nqubits = nr - 1)
     i = j = 1
     while i <= nr && j <= nc
         entry, pos = findmax(symp[i:nr, j])
@@ -44,23 +91,9 @@ function rref!(symp)
         # do this by adding mod 2 row i to row iprime
         for iprime in 1:nr
             if iprime != i && symp[iprime, j] == 1
-                for jprime in j:nc+1
-                    # this line is incorrect.
-                    # the phase must also be taken into account.
-                    # for example think of the two bell states
-                    #
-                    # bell1 = [1 1 0 0 0
-                    #          0 0 1 1 0]
-                    #
-                    # bell2 = [1 1 1 1 0
-                    #          0 0 1 1 0]
-                    #
-                    # these are not the same. However currently
-                    #
-                    # rref!(bell2) = bell1
-                    #
-                    symp[iprime, jprime] =  (symp[iprime, jprime] + symp[i, jprime]) % 2
-                end
+                stabs = symp[[iprime, i], :]
+                phasedstabilizermultiplication!(stabs, nqubits)
+                symp[[iprime, i], :] = stabs
             end
         end
         i += 1
