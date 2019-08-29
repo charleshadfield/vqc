@@ -159,7 +159,7 @@ function measureclifford!(symp, pauli::String, qubits::Vector{Int})
         measurementoutcome = rand(0:1)
         # update noncommuting rows S2, ...
         for row in noncommutingrows[2:end]
-            symp[row, :] = (symp[row, :] .+ symp[1, :]) .% 2
+            symp[row, :] = (symp[row, :] .+ symp[noncommutingrows[1], :]) .% 2
         end
         # update noncommuting row S1 with appropriately chosen measurement
         newstabilizer = zeros(Int, 2n+1)
