@@ -110,7 +110,7 @@ function twoQclifford!(reducedsymp, gate::Symbol)
 end
 
 """
-    oneQclifford!(symp, gate::Symbol, q::Int)
+    twoQclifford!(symp, gate::Symbol, q1::Int, q2::Int)
 
 Apply clifford `gate` to `symp` by repeatedly calling
 `twoQclifford!(reducedsymp, gate)`
